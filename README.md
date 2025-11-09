@@ -255,7 +255,6 @@ For comprehensive technical documentation including:
 - Performance optimization explanations
 - Security considerations
 - Deployment guides
-- Future enhancement roadmap
 
 **See:** [brief.pdf](brief.pdf)
 
