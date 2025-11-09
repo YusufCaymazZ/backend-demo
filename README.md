@@ -259,7 +259,7 @@ For comprehensive technical documentation including:
 - Deployment guides
 - Future enhancement roadmap
 
-**See:** [PROJECT_BRIEF.md](PROJECT_BRIEF.md)
+**See:** [brief.pdf](brief.pdf)
 
 ## Development
 
@@ -286,18 +286,8 @@ For comprehensive technical documentation including:
 5. **Cache balance queries** with Redis for read-heavy workloads
 6. **Run pipeline off-peak** or async with task queue
 
-## License
-
-Internal use only. Confidential and proprietary.
-
 ## Support
 
-- **Issues**: [Internal Issue Tracker]
-- **Documentation**: PROJECT_BRIEF.md
 - **Maintainer**: Data Engineering Team
-- **Version**: 3.0 (Production-Ready)
 
 ---
-
-**Last Updated**: November 2025
-**Status**: Production-Ready
