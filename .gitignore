@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual envs
+env/
+.venv/
+venv/
+ENV/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Packaging
+dist/
+build/
+*.egg-info/
+pip-wheel-metadata/
+
+# Mypy
+.mypy_cache/
+
+# Logs
+*.log
+
+# Docker
+docker-compose.override.yml
+
+# Local settings / secrets
+.env
+.env.*
+!.env.example  # Keep the template file tracked
+
+# Database and generated reports
+data/app.db
+reports/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Byte-compiled
+*.pyc
+
+# Misc
+.coverage.*
+
+# Allow tracking of example CSVs in data/ but ignore generated db & reports
+# (Keep the sample data files under data/ in the repo.)

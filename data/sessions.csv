@@ -1,0 +1,7 @@
+event_timestamp_utc,user_id,event_name
+2025-10-20T08:05:00Z,u001,user_engagement
+2025-10-20T08:15:00Z,u002,user_engagement
+2025-10-20T09:05:00Z,u003,user_engagement
+2025-10-21T08:20:00Z,u001,user_engagement
+2025-10-21T08:30:00Z,u004,user_engagement
+2025-10-21T10:00:00Z,u005,user_engagement

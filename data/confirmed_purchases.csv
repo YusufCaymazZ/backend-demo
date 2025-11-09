@@ -1,0 +1,6 @@
+appsflyer_id,event_name,event_time_utc,revenue_usd,campaign,receipt_id
+af_001,purchase,2025-10-20T09:00:00Z,4.99,Campaign_A,RCP-2000
+af_007,purchase,2025-10-20T10:00:00Z,19.99,Campaign_B,RCP-3000
+af_010,purchase,2025-10-20T10:30:00Z,9.99,Campaign_A,RCP-3100
+af_013,purchase,2025-10-20T12:00:00Z,1.99,Campaign_A,RCP-3200
+af_020,purchase,2025-10-21T08:10:00Z,2.99,Campaign_B,RCP-4000

@@ -1,0 +1,13 @@
+
+version: "3.8"
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./reports:/app/reports
+      - ./data:/app/data
+    env_file:
+      - .env
+    # Secrets are loaded from .env file - DO NOT hardcode here!
