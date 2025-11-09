@@ -1,4 +1,4 @@
-# Gaming Backend Platform v3.0
+# Backend Platform v3.0
 
 A production-ready gaming backend combining a high-performance REST API with advanced data analytics pipeline for mobile gaming applications.
 
