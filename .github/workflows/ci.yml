@@ -211,9 +211,26 @@ jobs:
             -e JWT_SECRET=test_secret_for_ci_only \
             -e DATABASE_URL=sqlite:////app/data/app.db \
             test-image
-          sleep 10  # Wait for container to start
-          # Check health endpoint
-          curl --fail http://localhost:8000/health || exit 1
+
+          # Wait for container to be healthy (max 60 seconds)
+          echo "Waiting for container to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/health 2>/dev/null; then
+              echo "Container is healthy!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Container failed to start. Logs:"
+              docker logs test-container
+              docker stop test-container
+              exit 1
+            fi
+            echo "Attempt $i/30: Container not ready yet, waiting 2s..."
+            sleep 2
+          done
+
+          # Run final health check
+          curl --fail http://localhost:8000/health
           docker stop test-container
 
   # JOB 5: DEPLOYMENT (Only on main branch)
