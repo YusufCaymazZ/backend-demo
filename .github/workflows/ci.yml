@@ -208,7 +208,7 @@ jobs:
         run: |
           docker build -t test-image .
           docker run -d --name test-container -p 8000:8000 \
-            -e JWT_SECRET=test_secret_for_ci_only \
+            -e JWT_SECRET=test_secret_for_ci_only_min_32_chars_required \
             -e DATABASE_URL=sqlite:////app/data/app.db \
             test-image
 
