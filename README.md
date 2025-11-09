@@ -286,8 +286,4 @@ For comprehensive technical documentation including:
 5. **Cache balance queries** with Redis for read-heavy workloads
 6. **Run pipeline off-peak** or async with task queue
 
-## Support
-
-- **Maintainer**: Data Engineering Team
-
 ---
