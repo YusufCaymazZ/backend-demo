@@ -5,8 +5,6 @@ A production-ready gaming backend combining a high-performance REST API with adv
 [![API](https://img.shields.io/badge/API-FastAPI-009688?style=flat-square)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square)](https://www.python.org/)
 [![Database](https://img.shields.io/badge/Database-SQLite%2FPostgreSQL-316192?style=flat-square)](https://www.postgresql.org/)
-[![License](https://img.shields.io/badge/License-Internal-red?style=flat-square)]()
-
 ## Quick Start
 
 ### Docker (Recommended)
