@@ -57,7 +57,7 @@ jobs:
     steps:
       # STEP 1: Get the code
       - name: Checkout code
-        uses: actions/checkout@v3  # This is a pre-built action from GitHub
+        uses: actions/checkout@v4  # This is a pre-built action from GitHub
         # "uses" means we're using someone else's action (like importing a library)
 
       # STEP 2: Set up Python environment
@@ -129,7 +129,7 @@ jobs:
       # Save test results as artifacts (downloadable files)
       - name: Upload test results
         if: always()  # Run even if previous steps failed
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: |
@@ -171,7 +171,7 @@ jobs:
 
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-reports
           path: |
