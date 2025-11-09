@@ -144,10 +144,7 @@ def verify_jwt(token: str) -> str:
 
 
 # Security scheme for Swagger UI
-security_scheme = HTTPBearer(
-    scheme_name="Bearer",
-    description="Enter JWT token obtained from /login endpoint"
-)
+security_scheme = HTTPBearer(scheme_name="Bearer", description="Enter JWT token obtained from /login endpoint")
 
 
 def current_user_id(credentials: HTTPAuthorizationCredentials = Security(security_scheme)) -> str:
@@ -160,13 +157,7 @@ def current_user_id(credentials: HTTPAuthorizationCredentials = Security(securit
 
 # --- Schemas
 class LoginIn(BaseModel):
-    userId: str = Field(
-        ...,
-        min_length=1,
-        max_length=255,
-        description="Unique user identifier",
-        examples=["player_12345", "user_abc"]
-    )
+    userId: str = Field(..., min_length=1, max_length=255, description="Unique user identifier", examples=["player_12345", "user_abc"])
 
     @field_validator('userId')
     def validate_user_id(v):
@@ -177,31 +168,12 @@ class LoginIn(BaseModel):
             raise ValueError('userId contains invalid characters')
         return v.strip()
 
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "userId": "player_12345"
-                }
-            ]
-        }
-    }
+    model_config = {"json_schema_extra": {"examples": [{"userId": "player_12345"}]}}
 
 
 class EarnIn(BaseModel):
-    amount: int = Field(
-        ...,
-        ge=1,
-        le=100000,
-        description="Amount of currency to add to user balance",
-        examples=[100, 500, 1000]
-    )
-    reason: Optional[str] = Field(
-        None,
-        max_length=500,
-        description="Reason for earning currency (for analytics)",
-        examples=["daily_login", "quest_complete", "level_up"]
-    )
+    amount: int = Field(..., ge=1, le=100000, description="Amount of currency to add to user balance", examples=[100, 500, 1000])
+    reason: Optional[str] = Field(None, max_length=500, description="Reason for earning currency (for analytics)", examples=["daily_login", "quest_complete", "level_up"])
 
     @field_validator('reason')
     def validate_reason(v):
@@ -209,37 +181,13 @@ class EarnIn(BaseModel):
             return None
         return v
 
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "amount": 500,
-                    "reason": "daily_login_bonus"
-                }
-            ]
-        }
-    }
+    model_config = {"json_schema_extra": {"examples": [{"amount": 500, "reason": "daily_login_bonus"}]}}
 
 
 class EventIn(BaseModel):
-    eventType: str = Field(
-        ...,
-        min_length=1,
-        max_length=100,
-        description="Event type identifier",
-        examples=["level_complete", "purchase", "game_start"]
-    )
-    meta: Optional[str] = Field(
-        None,
-        max_length=5000,
-        description="Optional JSON metadata for the event",
-        examples=['{"level": 10, "score": 9999}', '{"item_id": "sword_01"}']
-    )
-    timestampUtc: Optional[str] = Field(
-        None,
-        description="ISO 8601 UTC timestamp (defaults to current time if not provided)",
-        examples=["2025-11-07T10:30:00Z", "2025-11-07T14:45:30.123Z"]
-    )
+    eventType: str = Field(..., min_length=1, max_length=100, description="Event type identifier", examples=["level_complete", "purchase", "game_start"])
+    meta: Optional[str] = Field(None, max_length=5000, description="Optional JSON metadata for the event", examples=['{"level": 10, "score": 9999}', '{"item_id": "sword_01"}'])
+    timestampUtc: Optional[str] = Field(None, description="ISO 8601 UTC timestamp (defaults to current time if not provided)", examples=["2025-11-07T10:30:00Z", "2025-11-07T14:45:30.123Z"])
 
     @field_validator('eventType')
     def validate_event_type(v):
@@ -259,17 +207,7 @@ class EventIn(BaseModel):
             raise ValueError('Invalid timestamp format')
         return v
 
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "eventType": "level_complete",
-                    "meta": '{"level": 42, "score": 9999, "time_seconds": 145}',
-                    "timestampUtc": "2025-11-07T10:30:00Z"
-                }
-            ]
-        }
-    }
+    model_config = {"json_schema_extra": {"examples": [{"eventType": "level_complete", "meta": '{"level": 42, "score": 9999, "time_seconds": 145}', "timestampUtc": "2025-11-07T10:30:00Z"}]}}
 
 
 class EventOut(BaseModel):
@@ -383,11 +321,8 @@ def health(db: Session = Depends(get_db)):
         "version": "3.0",
         "environment": ENVIRONMENT,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "database": {
-            "status": "disconnected",
-            "type": "sqlite" if DB_URL.startswith("sqlite") else "postgresql"
-        },
-        "checks": {}
+        "database": {"status": "disconnected", "type": "sqlite" if DB_URL.startswith("sqlite") else "postgresql"},
+        "checks": {},
     }
 
     try:
@@ -446,8 +381,8 @@ def login(body: LoginIn, db: Session = Depends(get_db)):
         200: {"description": "Currency added successfully"},
         401: {"description": "Invalid or missing authentication token"},
         403: {"description": "Forbidden - No authentication provided"},
-        500: {"description": "Server error"}
-    }
+        500: {"description": "Server error"},
+    },
 )
 def earn(body: EarnIn, uid: str = Depends(current_user_id), db: Session = Depends(get_db)):
     try:
