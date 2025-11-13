@@ -7,5 +7,5 @@ services:
       - ./reports:/app/reports
       - ./data:/app/data
     env_file:
-      - .env
+      - .env.example
     # Secrets are loaded from .env file - DO NOT hardcode here!
