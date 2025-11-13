@@ -41,12 +41,8 @@ docker-compose.override.yml
 
 # Local settings / secrets
 .env
-.env.*
-!.env.example  # Keep the template file tracked
 
-# Database and generated reports
-data/app.db
-reports/
+
 
 # Jupyter
 .ipynb_checkpoints/

@@ -1,0 +1,1036 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Backend Platform v3.0 - Complete Test Suite",
+		"description": "Comprehensive API test collection for the Gaming Backend Platform.\n\n## Setup Instructions:\n1. Import this collection into Postman\n2. Run the \"1. Login\" request first\n3. The token will be automatically saved to the environment\n4. All subsequent requests will use this token automatically\n5. Run requests in order for best results\n\n## Features:\n- JWT Authentication\n- Currency Management\n- Event Tracking\n- Analytics Pipeline\n- Report Generation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Status is healthy\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('healthy');",
+									"});",
+									"",
+									"pm.test(\"Database is connected\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.database.status).to.eql('connected');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check API health status and database connectivity"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Get JWT Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.token).to.be.a('string');",
+									"    pm.expect(jsonData.token.length).to.be.above(50);",
+									"});",
+									"",
+									"// Save token to environment",
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"authToken\", jsonData.token);",
+									"pm.environment.set(\"userId\", jsonData.userId);",
+									"",
+									"console.log(\"Token saved:\", jsonData.token.substring(0, 50) + \"...\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"test_player_001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "Authenticate and obtain JWT token. Token is automatically saved to environment."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints including health check and login"
+		},
+		{
+			"name": "2. Currency Management",
+			"item": [
+				{
+					"name": "Earn Currency - Daily Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response indicates success\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.ok).to.be.true;",
+									"    pm.expect(jsonData.balance).to.be.a('number');",
+									"    pm.expect(jsonData.balance).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 500,\n    \"reason\": \"daily_login_bonus\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/earn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"earn"
+							]
+						},
+						"description": "Add 500 currency for daily login"
+					},
+					"response": []
+				},
+				{
+					"name": "Earn Currency - Quest Complete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Balance increased\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.balance).to.be.above(500);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 1000,\n    \"reason\": \"quest_complete_dragon_slayer\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/earn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"earn"
+							]
+						},
+						"description": "Add 1000 currency for completing a quest"
+					},
+					"response": []
+				},
+				{
+					"name": "Earn Currency - With Idempotency",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Has balance\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.balance).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "test-key-{{$randomUUID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 250,\n    \"reason\": \"daily_streak_bonus\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/earn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"earn"
+							]
+						},
+						"description": "Demonstrates idempotency - run this twice with the same key to see cached response"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has userId and balance\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userId).to.be.a('string');",
+									"    pm.expect(jsonData.balance).to.be.a('number');",
+									"});",
+									"",
+									"console.log(\"Current balance:\", pm.response.json().balance);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/balance",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"balance"
+							]
+						},
+						"description": "Get current user balance"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing user currency/balance"
+		},
+		{
+			"name": "3. Event Tracking",
+			"item": [
+				{
+					"name": "Track Event - Level Complete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Event created\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.ok).to.be.true;",
+									"    pm.expect(jsonData.eventId).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"level_complete\",\n    \"meta\": \"{\\\"level\\\": 42, \\\"score\\\": 9999, \\\"time_seconds\\\": 145, \\\"deaths\\\": 2}\",\n    \"timestampUtc\": \"2025-11-12T10:30:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/event",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event"
+							]
+						},
+						"description": "Track a level completion event with metadata"
+					},
+					"response": []
+				},
+				{
+					"name": "Track Event - Purchase",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"purchase\",\n    \"meta\": \"{\\\"item_id\\\": \\\"sword_legendary_fire\\\", \\\"price\\\": 500, \\\"currency\\\": \\\"gems\\\", \\\"transaction_id\\\": \\\"txn_12345\\\"}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/event",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event"
+							]
+						},
+						"description": "Track an in-game purchase event"
+					},
+					"response": []
+				},
+				{
+					"name": "Track Event - Boss Defeat",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"boss_defeat\",\n    \"meta\": \"{\\\"boss_name\\\": \\\"Ancient Dragon\\\", \\\"attempts\\\": 3, \\\"party_size\\\": 4, \\\"time_seconds\\\": 720}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/event",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event"
+							]
+						},
+						"description": "Track a boss defeat event"
+					},
+					"response": []
+				},
+				{
+					"name": "Track Event - Session Start",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"session_start\",\n    \"meta\": \"{\\\"device\\\": \\\"iOS\\\", \\\"os_version\\\": \\\"17.2\\\", \\\"app_version\\\": \\\"1.2.3\\\", \\\"device_model\\\": \\\"iPhone 15\\\"}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/event",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event"
+							]
+						},
+						"description": "Track a session start event"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Events - All",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has events array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.events).to.be.an('array');",
+									"    pm.expect(jsonData.total).to.be.a('number');",
+									"});",
+									"",
+									"console.log(\"Total events:\", pm.response.json().total);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events?limit=100&offset=0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						},
+						"description": "Get all events with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Events - Filtered by Type",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events?event_type=level_complete&limit=50",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							],
+							"query": [
+								{
+									"key": "event_type",
+									"value": "level_complete"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Get only level_complete events"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Events - Time Range",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events?start_time=2025-11-12T00:00:00Z&end_time=2025-11-12T23:59:59Z&limit=100",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							],
+							"query": [
+								{
+									"key": "start_time",
+									"value": "2025-11-12T00:00:00Z"
+								},
+								{
+									"key": "end_time",
+									"value": "2025-11-12T23:59:59Z"
+								},
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Get events within a specific time range"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for tracking and retrieving game events"
+		},
+		{
+			"name": "4. Analytics & Stats",
+			"item": [
+				{
+					"name": "Get Global Stats",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has stats array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.stats).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stats?limit=100",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"stats"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Get event statistics across all users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stats?uid={{userId}}&limit=50",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"stats"
+							],
+							"query": [
+								{
+									"key": "uid",
+									"value": "{{userId}}"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Get statistics for a specific user"
+					},
+					"response": []
+				},
+				{
+					"name": "Deeplink Tracking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Tracking successful\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.ok).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/track?character=warrior&campaign=summer_promo_2025",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"track"
+							],
+							"query": [
+								{
+									"key": "character",
+									"value": "warrior"
+								},
+								{
+									"key": "campaign",
+									"value": "summer_promo_2025"
+								}
+							]
+						},
+						"description": "Track deeplink attribution from marketing campaigns"
+					},
+					"response": []
+				}
+			],
+			"description": "Analytics and statistics endpoints"
+		},
+		{
+			"name": "5. Data Pipeline",
+			"item": [
+				{
+					"name": "Run Data Pipeline",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Pipeline executed\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('ok');",
+									"    pm.expect(jsonData).to.have.property('returncode');",
+									"});",
+									"",
+									"if (pm.response.json().ok) {",
+									"    console.log(\"Pipeline completed successfully\");",
+									"    console.log(\"Output:\", pm.response.json().stdout);",
+									"} else {",
+									"    console.log(\"Pipeline failed:\", pm.response.json().stderr);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/run-pipeline",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"run-pipeline"
+							]
+						},
+						"description": "Trigger the data analytics pipeline to process CSVs and generate reports"
+					},
+					"response": []
+				}
+			],
+			"description": "Data pipeline execution endpoint"
+		},
+		{
+			"name": "6. Error Scenarios",
+			"item": [
+				{
+					"name": "Unauthorized - No Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/balance",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"balance"
+							]
+						},
+						"description": "Test accessing protected endpoint without authentication"
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorized - Invalid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "invalid.token.here",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/balance",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"balance"
+							]
+						},
+						"description": "Test accessing protected endpoint with invalid token"
+					},
+					"response": []
+				},
+				{
+					"name": "Bad Request - Negative Amount",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": -100,\n    \"reason\": \"test\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/earn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"earn"
+							]
+						},
+						"description": "Test validation error with negative amount"
+					},
+					"response": []
+				},
+				{
+					"name": "Bad Request - Invalid Timestamp",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"test\",\n    \"timestampUtc\": \"invalid-timestamp\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/event",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event"
+							]
+						},
+						"description": "Test validation error with invalid timestamp format"
+					},
+					"response": []
+				}
+			],
+			"description": "Test error handling and validation"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

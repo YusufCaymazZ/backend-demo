@@ -1,0 +1,23 @@
+[
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_A",
+    "revenue": 59.9,
+    "dau": 3,
+    "arpdau": 19.9666666667
+  },
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_B",
+    "revenue": 14.95,
+    "dau": 3,
+    "arpdau": 4.9833333333
+  },
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_C",
+    "revenue": 31.95,
+    "dau": 3,
+    "arpdau": 10.65
+  }
+]

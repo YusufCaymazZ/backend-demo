@@ -1,0 +1,23 @@
+[
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_A",
+    "revenue_usd": 59.9,
+    "ad_cost_usd": 220.0,
+    "roas": 0.2722727273
+  },
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_B",
+    "revenue_usd": 14.95,
+    "ad_cost_usd": null,
+    "roas": 0.0
+  },
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_C",
+    "revenue_usd": 31.95,
+    "ad_cost_usd": null,
+    "roas": 0.0
+  }
+]

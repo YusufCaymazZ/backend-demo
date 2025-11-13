@@ -1,0 +1,176 @@
+{
+  "summary": {
+    "matched": 5,
+    "af_only": 21,
+    "confirmed_only": 1
+  },
+  "details": [
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_011",
+      "event_time_utc": "2025-10-20T08:00:00Z",
+      "revenue_usd": 9.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_011",
+      "event_time_utc": "2025-10-20T11:00:00Z",
+      "revenue_usd": 2.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_011",
+      "event_time_utc": "2025-10-21T08:00:00Z",
+      "revenue_usd": 9.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_016",
+      "event_time_utc": "2025-10-20T08:15:00Z",
+      "revenue_usd": 0.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_006",
+      "event_time_utc": "2025-10-20T08:21:00Z",
+      "revenue_usd": 1.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_015",
+      "event_time_utc": "2025-10-20T08:26:00Z",
+      "revenue_usd": 2.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_015",
+      "event_time_utc": "2025-10-20T09:38:00Z",
+      "revenue_usd": 4.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_015",
+      "event_time_utc": "2025-10-21T08:30:00Z",
+      "revenue_usd": 9.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_007",
+      "event_time_utc": "2025-10-20T08:39:00Z",
+      "revenue_usd": 4.99
+    },
+    {
+      "type": "matched",
+      "appsflyer_id": "af_007",
+      "af_event_time_utc": "2025-10-20T10:00:00Z",
+      "cf_event_time_utc": "2025-10-20T10:00:00Z",
+      "revenue_usd": 0.0
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_007",
+      "event_time_utc": "2025-10-21T08:10:00Z",
+      "revenue_usd": 4.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_004",
+      "event_time_utc": "2025-10-20T08:53:00Z",
+      "revenue_usd": 1.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_004",
+      "event_time_utc": "2025-10-20T09:09:00Z",
+      "revenue_usd": 9.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_004",
+      "event_time_utc": "2025-10-20T09:19:00Z",
+      "revenue_usd": 4.99
+    },
+    {
+      "type": "matched",
+      "appsflyer_id": "af_001",
+      "af_event_time_utc": "2025-10-20T09:00:00Z",
+      "cf_event_time_utc": "2025-10-20T09:00:00Z",
+      "revenue_usd": 4.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_008",
+      "event_time_utc": "2025-10-20T09:04:00Z",
+      "revenue_usd": 0.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_008",
+      "event_time_utc": "2025-10-21T08:20:00Z",
+      "revenue_usd": 2.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_002",
+      "event_time_utc": "2025-10-20T09:31:00Z",
+      "revenue_usd": 19.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_010",
+      "event_time_utc": "2025-10-20T09:52:00Z",
+      "revenue_usd": 2.99
+    },
+    {
+      "type": "matched",
+      "appsflyer_id": "af_010",
+      "af_event_time_utc": "2025-10-20T10:30:00Z",
+      "cf_event_time_utc": "2025-10-20T10:30:00Z",
+      "revenue_usd": 9.99
+    },
+    {
+      "type": "matched",
+      "appsflyer_id": "af_010",
+      "af_event_time_utc": "2025-10-20T10:31:00Z",
+      "cf_event_time_utc": "2025-10-20T10:30:00Z",
+      "revenue_usd": 9.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_017",
+      "event_time_utc": "2025-10-20T10:05:00Z",
+      "revenue_usd": 4.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_018",
+      "event_time_utc": "2025-10-20T10:16:00Z",
+      "revenue_usd": 1.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_020",
+      "event_time_utc": "2025-10-20T10:19:00Z",
+      "revenue_usd": 2.99
+    },
+    {
+      "type": "matched",
+      "appsflyer_id": "af_013",
+      "af_event_time_utc": "2025-10-20T12:00:00Z",
+      "cf_event_time_utc": "2025-10-20T12:00:00Z",
+      "revenue_usd": 1.99
+    },
+    {
+      "type": "af_only",
+      "appsflyer_id": "af_013",
+      "event_time_utc": "2025-10-21T08:40:00Z",
+      "revenue_usd": 2.99
+    },
+    {
+      "type": "confirmed_only",
+      "appsflyer_id": "af_020",
+      "event_time_utc": "2025-10-21T08:10:00Z",
+      "revenue_usd": 2.99
+    }
+  ]
+}

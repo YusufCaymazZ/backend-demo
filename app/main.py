@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, event, text, Index
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, text, Index
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from sqlalchemy.pool import StaticPool
@@ -44,10 +44,15 @@ class RequestIdFilter(logging.Filter):
 logger = logging.getLogger(__name__)
 logger.addFilter(RequestIdFilter())
 
-DATA_DIR = os.getenv("DATA_DIR", "data")
+# Resolve DATA_DIR relative to project root (parent of app/ directory)
+# This ensures tests and app use the same data directory
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DATA_DIR_RELATIVE = os.getenv("DATA_DIR", "data")
+DATA_DIR = os.path.join(PROJECT_ROOT, DATA_DIR_RELATIVE) if not os.path.isabs(DATA_DIR_RELATIVE) else DATA_DIR_RELATIVE
 DB_URL = os.getenv("DATABASE_URL", f"sqlite:///{os.path.join(DATA_DIR, 'app.db')}")
 JWT_SECRET = os.getenv("JWT_SECRET", "test_secret")
 JWT_TTL_MIN = int(os.getenv("JWT_TTL_MIN", "120"))
+AF_SECRET = os.getenv("AF_SECRET", "appsflyer_secret_key")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 
@@ -90,6 +95,27 @@ class Event(Base):
         Index('idx_type_time', 'event_type', 'ts_utc'),  # For events by type ordered by time
         Index('idx_user_type_time', 'user_id', 'event_type', 'ts_utc'),  # For filtered queries
     )
+
+
+class IdempotencyKey(Base):
+    __tablename__ = "idempotency_keys"
+    id = Column(Integer, primary_key=True)
+    key = Column(String, unique=True, index=True, nullable=False)
+    endpoint = Column(String, nullable=False)
+    user_id = Column(String, nullable=False)
+    response_data = Column(String, nullable=False)  # JSON string
+    created_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime, index=True, nullable=False)
+
+
+class RawPostback(Base):
+    __tablename__ = "raw_postbacks"
+    id = Column(Integer, primary_key=True)
+    source = Column(String, nullable=False)  # e.g., "appsflyer"
+    payload = Column(String, nullable=False)  # JSON string
+    signature = Column(String, nullable=True)
+    ts_utc = Column(DateTime, index=True, nullable=False)
+    processed = Column(Integer, default=0, index=True)  # 0=pending, 1=processed
 
 
 Base.metadata.create_all(engine)
@@ -155,6 +181,68 @@ def current_user_id(credentials: HTTPAuthorizationCredentials = Security(securit
     return verify_jwt(credentials.credentials)
 
 
+def verify_appsflyer_signature(payload: str, signature: str) -> bool:
+    """
+    Verify AppsFlyer HMAC-SHA256 signature
+    """
+    try:
+        expected = hmac.new(AF_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, signature)
+    except Exception:
+        return False
+
+
+def check_idempotency(db: Session, key: str, endpoint: str, user_id: str) -> Optional[dict]:
+    """
+    Check if an idempotency key has been used before.
+    Returns cached response if found and not expired, None otherwise.
+    """
+    try:
+        from datetime import timedelta
+
+        now = datetime.now(timezone.utc)
+        idem = db.query(IdempotencyKey).filter_by(key=key).first()
+
+        if idem:
+            # Ensure expires_at is timezone-aware
+            expires_at = idem.expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+            # Check if expired (24 hours TTL)
+            if expires_at > now:
+                logger.info(f"Idempotency key hit: {key}")
+                return json.loads(idem.response_data)
+            else:
+                # Clean up expired key
+                db.delete(idem)
+                db.commit()
+
+        return None
+    except Exception as e:
+        logger.error(f"Error checking idempotency: {e}")
+        return None
+
+
+def store_idempotency(db: Session, key: str, endpoint: str, user_id: str, response: dict):
+    """
+    Store response for idempotency checking (24 hour TTL)
+    """
+    try:
+        now = datetime.now(timezone.utc)
+        from datetime import timedelta
+
+        expires = now + timedelta(hours=24)
+
+        idem = IdempotencyKey(key=key, endpoint=endpoint, user_id=user_id, response_data=json.dumps(response), created_at=now, expires_at=expires)
+        db.add(idem)
+        db.commit()
+        logger.info(f"Stored idempotency key: {key}")
+    except Exception as e:
+        logger.error(f"Error storing idempotency: {e}")
+        db.rollback()
+
+
 # --- Schemas
 class LoginIn(BaseModel):
     userId: str = Field(..., min_length=1, max_length=255, description="Unique user identifier", examples=["player_12345", "user_abc"])
@@ -215,6 +303,24 @@ class EventOut(BaseModel):
     type: str
     ts: str
     meta: Optional[str] = None
+
+
+class AppsFlyerPostbackIn(BaseModel):
+    """
+    AppsFlyer postback payload schema
+    Fields will vary based on event type, so we accept arbitrary fields
+    """
+
+    class Config:
+        extra = "allow"  # Allow additional fields
+
+
+class PaginatedEventsOut(BaseModel):
+    events: List[EventOut]
+    total: int
+    limit: int
+    offset: int
+    hasMore: bool
 
 
 # --- App
@@ -384,8 +490,14 @@ def login(body: LoginIn, db: Session = Depends(get_db)):
         500: {"description": "Server error"},
     },
 )
-def earn(body: EarnIn, uid: str = Depends(current_user_id), db: Session = Depends(get_db)):
+def earn(body: EarnIn, uid: str = Depends(current_user_id), db: Session = Depends(get_db), idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key")):
     try:
+        # Check idempotency if key is provided
+        if idempotency_key:
+            cached = check_idempotency(db, idempotency_key, "earn", uid)
+            if cached:
+                return cached
+
         logger.info(f"Earn request for user {uid}: amount={body.amount}, reason={body.reason}")
         # Use with_for_update() to lock the row and prevent race conditions on balance updates
         u = db.query(User).filter_by(user_id=uid).with_for_update().first()
@@ -399,7 +511,14 @@ def earn(body: EarnIn, uid: str = Depends(current_user_id), db: Session = Depend
         db.add(Event(user_id=uid, event_type="earn", ts_utc=datetime.now(timezone.utc), meta=(body.reason or "")))
         db.commit()
         logger.info(f"Earn successful for user {uid}: new balance={u.balance}")
-        return {"ok": True, "balance": u.balance}
+
+        response = {"ok": True, "balance": u.balance}
+
+        # Store idempotency key if provided
+        if idempotency_key:
+            store_idempotency(db, idempotency_key, "earn", uid, response)
+
+        return response
     except SQLAlchemyError as e:
         logger.error(f"Database error during earn for {uid}: {e}")
         db.rollback()
@@ -431,8 +550,14 @@ def balance(uid: str = Depends(current_user_id), db: Session = Depends(get_db)):
 
 
 @app.post("/event")
-def post_event(body: EventIn, uid: str = Depends(current_user_id), db: Session = Depends(get_db)):
+def post_event(body: EventIn, uid: str = Depends(current_user_id), db: Session = Depends(get_db), idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key")):
     try:
+        # Check idempotency if key is provided
+        if idempotency_key:
+            cached = check_idempotency(db, idempotency_key, "event", uid)
+            if cached:
+                return cached
+
         logger.info(f"Event request for user {uid}: type={body.eventType}")
 
         # Parse timestamp with error handling
@@ -451,7 +576,14 @@ def post_event(body: EventIn, uid: str = Depends(current_user_id), db: Session =
         db.commit()
         db.refresh(ev)
         logger.info(f"Event created for user {uid}: event_id={ev.id}")
-        return {"ok": True, "eventId": ev.id}
+
+        response = {"ok": True, "eventId": ev.id}
+
+        # Store idempotency key if provided
+        if idempotency_key:
+            store_idempotency(db, idempotency_key, "event", uid, response)
+
+        return response
     except HTTPException:
         raise
     except SQLAlchemyError as e:
@@ -464,13 +596,58 @@ def post_event(body: EventIn, uid: str = Depends(current_user_id), db: Session =
         raise HTTPException(status_code=500, detail="Event creation failed")
 
 
-@app.get("/events", response_model=List[EventOut])
-def list_events(uid: str = Depends(current_user_id), db: Session = Depends(get_db)):
+@app.get("/events", response_model=PaginatedEventsOut)
+def list_events(
+    uid: str = Depends(current_user_id),
+    db: Session = Depends(get_db),
+    limit: int = 100,
+    offset: int = 0,
+    event_type: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+):
     try:
-        logger.info(f"Fetching events for user {uid}")
-        rows = db.query(Event).filter_by(user_id=uid).order_by(Event.ts_utc.desc()).limit(100).all()
-        logger.info(f"Retrieved {len(rows)} events for user {uid}")
-        return [{"id": r.id, "type": r.event_type, "ts": r.ts_utc.isoformat(), "meta": r.meta} for r in rows]
+        # Validate pagination parameters
+        if limit < 1 or limit > 1000:
+            raise HTTPException(status_code=400, detail="limit must be between 1 and 1000")
+        if offset < 0:
+            raise HTTPException(status_code=400, detail="offset must be non-negative")
+
+        logger.info(f"Fetching events for user {uid} (limit={limit}, offset={offset})")
+
+        # Build query with filters
+        query = db.query(Event).filter(Event.user_id == uid)
+
+        if event_type:
+            query = query.filter(Event.event_type == event_type)
+
+        if start_time:
+            try:
+                start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                query = query.filter(Event.ts_utc >= start_dt)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid start_time format. Use ISO 8601 format.")
+
+        if end_time:
+            try:
+                end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+                query = query.filter(Event.ts_utc <= end_dt)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid end_time format. Use ISO 8601 format.")
+
+        # Get total count before pagination
+        total = query.count()
+
+        # Apply pagination
+        rows = query.order_by(Event.ts_utc.desc()).offset(offset).limit(limit).all()
+
+        logger.info(f"Retrieved {len(rows)} events for user {uid} (total={total})")
+
+        events = [{"id": r.id, "type": r.event_type, "ts": r.ts_utc.isoformat(), "meta": r.meta} for r in rows]
+
+        return {"events": events, "total": total, "limit": limit, "offset": offset, "hasMore": (offset + len(events)) < total}
+    except HTTPException:
+        raise
     except SQLAlchemyError as e:
         logger.error(f"Database error fetching events for {uid}: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch events")
@@ -480,19 +657,60 @@ def list_events(uid: str = Depends(current_user_id), db: Session = Depends(get_d
 
 
 @app.get("/stats")
-def stats(uid: Optional[str] = None, db: Session = Depends(get_db)):
+def stats(
+    uid: Optional[str] = None, event_type: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None, limit: int = 100, offset: int = 0, db: Session = Depends(get_db)
+):
     # If uid is provided, filter by that user; else global counts
     try:
         from sqlalchemy import func
 
+        # Validate pagination parameters
+        if limit < 1 or limit > 1000:
+            raise HTTPException(status_code=400, detail="limit must be between 1 and 1000")
+        if offset < 0:
+            raise HTTPException(status_code=400, detail="offset must be non-negative")
+
         logger.info(f"Stats request for {'user ' + uid if uid else 'all users'}")
+
+        # Build query with filters
         q = db.query(Event.event_type, func.count().label("cnt"))
+
         if uid:
             q = q.filter(Event.user_id == uid)
-        q = q.group_by(Event.event_type).all()
-        result = [{"eventType": et, "count": int(c)} for et, c in q]
-        logger.info(f"Stats retrieved: {len(result)} event types")
-        return result
+
+        if event_type:
+            q = q.filter(Event.event_type == event_type)
+
+        if start_time:
+            try:
+                start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                q = q.filter(Event.ts_utc >= start_dt)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid start_time format. Use ISO 8601 format.")
+
+        if end_time:
+            try:
+                end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+                q = q.filter(Event.ts_utc <= end_dt)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid end_time format. Use ISO 8601 format.")
+
+        # Group and order by count
+        q = q.group_by(Event.event_type).order_by(func.count().desc())
+
+        # Get total before pagination
+        all_results = q.all()
+        total = len(all_results)
+
+        # Apply pagination
+        paginated = all_results[offset : offset + limit]
+
+        result = [{"eventType": et, "count": int(c)} for et, c in paginated]
+        logger.info(f"Stats retrieved: {len(result)} event types (total={total})")
+
+        return {"stats": result, "total": total, "limit": limit, "offset": offset, "hasMore": (offset + len(result)) < total}
+    except HTTPException:
+        raise
     except SQLAlchemyError as e:
         logger.error(f"Database error fetching stats: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch statistics")
@@ -520,6 +738,64 @@ def track(character: Optional[str] = None, campaign: Optional[str] = None, db: S
         logger.error(f"Unexpected error during deeplink tracking: {e}")
         db.rollback()
         raise HTTPException(status_code=500, detail="Tracking failed")
+
+
+# AppsFlyer postback endpoint with HMAC signature verification
+@app.post("/af/postback")
+async def appsflyer_postback(request: Request, db: Session = Depends(get_db), af_signature: Optional[str] = Header(None, alias="X-AF-Signature")):
+    try:
+        # Read raw body for signature verification
+        body_bytes = await request.body()
+        body_str = body_bytes.decode('utf-8')
+
+        logger.info(f"Received AppsFlyer postback, signature present: {af_signature is not None}")
+
+        # Verify HMAC signature if provided
+        if af_signature:
+            if not verify_appsflyer_signature(body_str, af_signature):
+                logger.warning("AppsFlyer signature verification failed")
+                raise HTTPException(status_code=401, detail="Invalid signature")
+            logger.info("AppsFlyer signature verified successfully")
+        else:
+            logger.warning("No AppsFlyer signature provided")
+
+        # Parse JSON payload
+        try:
+            payload = json.loads(body_str)
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON in AppsFlyer postback")
+            raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+        # Store raw postback
+        postback = RawPostback(source="appsflyer", payload=body_str, signature=af_signature, ts_utc=datetime.now(timezone.utc), processed=0)
+        db.add(postback)
+        db.commit()
+        db.refresh(postback)
+
+        logger.info(f"AppsFlyer postback stored successfully: id={postback.id}")
+
+        # Create corresponding event for immediate processing
+        event_name = payload.get('event_name', 'af_postback')
+        user_id = payload.get('customer_user_id') or payload.get('appsflyer_id', 'unknown')
+
+        new_event = Event(user_id=user_id, event_type=f"af_{event_name}", ts_utc=datetime.now(timezone.utc), meta=json.dumps(payload))
+        db.add(new_event)
+        db.commit()
+
+        logger.info(f"Event created from AppsFlyer postback: user={user_id}, event={event_name}")
+
+        return {"ok": True, "postbackId": postback.id, "eventId": new_event.id, "message": "Postback received and stored successfully"}
+
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        logger.error(f"Database error processing AppsFlyer postback: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to store postback")
+    except Exception as e:
+        logger.error(f"Unexpected error processing AppsFlyer postback: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Postback processing failed")
 
 
 # Trigger data pipeline (CSV -> reports)

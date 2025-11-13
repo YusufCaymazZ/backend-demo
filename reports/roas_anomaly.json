@@ -1,0 +1,23 @@
+[
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_A",
+    "roas_d1": 0.2722727272727273,
+    "avg7": 0.2722727272727273,
+    "anomaly": false
+  },
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_B",
+    "roas_d1": 0.0,
+    "avg7": 0.0,
+    "anomaly": false
+  },
+  {
+    "date": "2025-10-20",
+    "campaign": "CAMPAIGN_C",
+    "roas_d1": 0.0,
+    "avg7": 0.0,
+    "anomaly": false
+  }
+]
